@@ -1,38 +1,157 @@
 "use strict";
-/* Layar lobi: pilih bangsa, jumlah lawan, tim, kesulitan. */
-function LobbyScreen({ onStart: e }) {
-  let [n, t] = React.useState("british"), [r, l] = React.useState(2), [u, i] = React.useState(() => {
-    return [{ idx: 0, nationId: "french", difficulty: "Normal", team: "enemy" }, { idx: 1, nationId: "spanish", difficulty: "Normal", team: "enemy" }];
-  });
+/* Lobby: pemilihan bangsa yang jelas + konfigurasi pertandingan. */
+function LobbyScreen({ onStart }) {
+  const [nationId, setNationId] = React.useState("british");
+  const [opponentCount, setOpponentCount] = React.useState(2);
+  const [opponents, setOpponents] = React.useState(() => [
+    { idx: 0, nationId: "french", difficulty: "Normal", team: "enemy" },
+    { idx: 1, nationId: "spanish", difficulty: "Normal", team: "enemy" }
+  ]);
+
   React.useEffect(() => {
-    i((c) => {
-      let P = [...c];
-      if (r > P.length) for (let F = P.length; F < r; F++) {
-        let C = NATIONS[(F + 2) % NATIONS.length].id;
-        P.push({ idx: F, nationId: C, difficulty: F === 0 ? "Hard" : "Normal", team: F === r - 1 && r > 3 ? "ally" : "enemy" });
+    setOpponents((current) => {
+      const next = current.slice(0, opponentCount);
+      for (let i = next.length; i < opponentCount; i++) {
+        const nation = NATIONS[(i + 2) % NATIONS.length];
+        next.push({ idx: i, nationId: nation.id, difficulty: i === 0 ? "Hard" : "Normal", team: i === opponentCount - 1 && opponentCount > 3 ? "ally" : "enemy" });
       }
-      else return P.slice(0, r);
-      return P;
+      return next;
     });
-  }, [r]);
-  let a = React.useMemo(() => 28 + r * 5, [r]), f = a < 35 ? "Small" : a < 45 ? "Medium" : "Large";
-  return jsx("div", { className: "w-full h-full overflow-y-auto overflow-x-hidden bg-[#e8dcc0] text-[#2b241e]", style: { fontFamily: '"Courier New", monospace' }, children: jsxs("div", { className: "min-h-full w-full relative", style: { backgroundImage: "repeating-linear-gradient(0deg, rgba(0,0,0,0.03) 0 1px, transparent 1px 6px), radial-gradient(ellipse at top, #f5ecd0 0%, #e8dcc0 60%, #d4c4a0 100%)" }, children: [jsxs("div", { className: "sticky top-0 z-10 bg-[#1a1611] text-[#e8dcc0] border-b-[4px] border-black flex items-center justify-between px-4 py-2 shadow-[0_4px_0_#000]", children: [jsxs("div", { className: "flex items-center gap-3", children: [jsx("div", { className: "w-10 h-10 bg-[#d4a24e] border-[3px] border-black flex items-center justify-center font-black text-[14px]", children: "APW" }), jsxs("div", { className: "leading-none", children: [jsx("div", { className: "font-black tracking-[0.15em] text-[13px]", children: "AGE OF PIXEL WAR" }), jsxs("div", { className: "text-[9px] text-[#a89a7a] tracking-widest", children: ["LOBBY \u2022 SELECT NATION BEFORE WAR \u2022 ", f, " MAP ", a, "x", a] })] })] }), jsxs("div", { className: "hidden md:flex items-center gap-2 text-[8px]", children: [jsx("span", { className: "px-2 py-1 bg-[#2b241e] border-2 border-black", children: "LANDSCAPE ONLY" }), jsx("span", { className: "px-2 py-1 bg-[#7CFC00] text-black border-2 border-black font-bold", children: "AOE3 MODE" })] })] }), jsxs("div", { className: "max-w-[1280px] mx-auto p-3 md:p-5 grid grid-cols-1 lg:grid-cols-[1.6fr_0.9fr] gap-4", children: [jsxs("div", { children: [jsxs("div", { className: "flex items-center justify-between mb-2", children: [jsx("div", { className: "text-[11px] font-black tracking-[0.2em]", children: "CHOOSE YOUR NATION \u2022 8 FLAGS" }), jsx("div", { className: "text-[8px] bg-black text-[#7CFC00] px-2 py-1 border-2 border-[#333]", children: "TEAM VISION ENABLED \u2022 ALLIES SHARE SIGHT" })] }), jsx("div", { className: "grid grid-cols-1 sm:grid-cols-2 gap-2", children: NATIONS.map((c) => {
-    let P = n === c.id;
-    return jsxs("button", { onClick: () => t(c.id), className: `text-left relative border-[4px] p-2 flex gap-2 items-start transition-all shadow-[3px_3px_0_#000] ${P ? "bg-white border-black scale-[1.02] z-10" : "bg-[#f5ecd0] border-[#1a1611] hover:bg-white"}`, children: [jsxs("div", { className: "shrink-0 w-[54px] h-[38px] border-[3px] border-black relative overflow-hidden shadow-[2px_2px_0_#000]", style: { background: c.color }, children: [jsx("div", { className: "absolute inset-0 grid grid-cols-4 grid-rows-4", children: Array.from({ length: 16 }).map((F, C) => {
-      let E = C % 3 === 0;
-      return jsx("div", { className: "border-[0.5px] border-black/10", style: { background: E ? c.secondary : c.color, opacity: E ? 0.9 : 1 } }, C);
-    }) }), jsx("div", { className: "absolute inset-0 flex items-center justify-center text-[20px] drop-shadow-[1px_1px_0_#000]", children: c.flag }), P && jsx("div", { className: "absolute -top-1 -right-1 w-3 h-3 bg-[#7CFC00] border-2 border-black" })] }), jsxs("div", { className: "flex-1 min-w-0", children: [jsxs("div", { className: "flex items-center gap-2", children: [jsx("span", { className: "font-black text-[11px] tracking-widest", children: c.name.toUpperCase() }), jsx("span", { className: "text-[7px] px-1 py-0.5 bg-black text-white border border-[#333]", children: c.uniqueUnit.toUpperCase() }), jsx("span", { className: "ml-auto w-3 h-3 border-2 border-black", style: { background: c.color } })] }), jsx("div", { className: "text-[8px] font-bold leading-[1.2] mt-0.5 text-[#5a4a3a]", children: c.description }), jsx("div", { className: "mt-1 flex flex-wrap gap-1", children: c.bonuses.map((F) => jsx("span", { className: "text-[7px] px-1 py-0.5 bg-[#2b241e] text-[#e8dcc0] border border-black", children: F }, F)) })] })] }, c.id);
-  }) }), jsxs("div", { className: "mt-4 bg-[#1a1611] border-[4px] border-black p-3 text-[#e8dcc0] shadow-[4px_4px_0_#000]", children: [jsxs("div", { className: "text-[9px] tracking-widest font-bold mb-2", children: ["SELECTED: ", getNation(n).name.toUpperCase(), " \u2022 ", getNation(n).bonuses.join(" \u2022 ")] }), jsxs("div", { className: "grid grid-cols-3 gap-2 text-[8px]", children: [jsxs("div", { className: "bg-[#2b241e] border-2 border-black p-2", children: [jsx("b", { children: "UNIQUE" }), jsx("br", {}), getNation(n).uniqueUnit.toUpperCase(), " - elite version"] }), jsxs("div", { className: "bg-[#2b241e] border-2 border-black p-2", children: [jsx("b", { children: "COLOR" }), jsx("br", {}), jsx("span", { className: "inline-block w-3 h-3 border border-black align-middle", style: { background: getNation(n).color } }), " Team color based on nation"] }), jsxs("div", { className: "bg-[#2b241e] border-2 border-black p-2", children: [jsx("b", { children: "FOG" }), jsx("br", {}), "True AoE: black if unexplored, dark if explored, bright if visible. Allies share vision."] })] })] })] }), jsxs("div", { className: "flex flex-col gap-3", children: [jsxs("div", { className: "bg-white border-[4px] border-black p-3 shadow-[4px_4px_0_#000]", children: [jsxs("div", { className: "text-[11px] font-black tracking-widest flex justify-between", children: ["OPPONENTS ", jsxs("span", { className: "text-[9px] font-bold bg-black text-white px-2 py-0.5", children: [r, " / 7 MAX"] })] }), jsxs("div", { className: "mt-3", children: [jsx("input", { type: "range", min: 1, max: 7, value: r, onChange: (c) => l(parseInt(c.target.value)), className: "w-full accent-black h-2" }), jsxs("div", { className: "flex justify-between text-[7px] font-bold mt-1", children: [jsx("span", { children: "1" }), jsx("span", { children: "4" }), jsx("span", { children: "7" })] })] }), jsxs("div", { className: "mt-2 text-[8px] grid grid-cols-3 gap-1", children: [jsxs("div", { className: "bg-[#e8dcc0] border-2 border-black p-1 text-center", children: [jsx("b", { children: "MAP" }), jsx("br", {}), a, "x", a, jsx("br", {}), f] }), jsxs("div", { className: "bg-[#e8dcc0] border-2 border-black p-1 text-center", children: [jsx("b", { children: "SCALE" }), jsx("br", {}), "+5 tiles / foe", jsx("br", {}), "More resources"] }), jsxs("div", { className: "bg-[#e8dcc0] border-2 border-black p-1 text-center", children: [jsx("b", { children: "FOG" }), jsx("br", {}), "Team vision", jsx("br", {}), "Ally = shared LOS"] })] }), jsx("div", { className: "mt-3 space-y-2 max-h-[420px] overflow-y-auto pr-1", children: u.map((c, P) => {
-    let F = getNation(c.nationId);
-    return jsxs("div", { className: "border-[3px] border-black bg-[#f5ecd0] p-2 shadow-[2px_2px_0_#000]", children: [jsxs("div", { className: "flex items-center justify-between mb-1", children: [jsxs("div", { className: "text-[9px] font-black tracking-widest flex items-center gap-2", children: [jsx("span", { className: "w-5 h-5 bg-black text-white flex items-center justify-center text-[10px]", children: P + 1 }), c.team === "ally" ? "ALLY" : "ENEMY", " \u2022 ", F.name.toUpperCase(), jsx("span", { className: "w-3 h-3 border border-black inline-block", style: { background: F.color } })] }), jsx("div", { className: "flex gap-1", children: jsx("button", { onClick: () => {
-      let C = [...u];
-      C[P].team = C[P].team === "enemy" ? "ally" : "enemy", i(C);
-    }, className: `px-2 py-0.5 text-[7px] font-bold border-2 border-black ${c.team === "ally" ? "bg-[#7CFC00] text-black" : "bg-[#ff5a5a] text-white"}`, children: c.team.toUpperCase() }) })] }), jsxs("div", { className: "grid grid-cols-2 gap-1", children: [jsx("select", { value: c.nationId, onChange: (C) => {
-      let E = [...u];
-      E[P].nationId = C.target.value, i(E);
-    }, className: "text-[8px] font-bold border-2 border-black bg-white p-1", children: NATIONS.map((C) => jsx("option", { value: C.id, children: C.name }, C.id)) }), jsxs("select", { value: c.difficulty, onChange: (C) => {
-      let E = [...u];
-      E[P].difficulty = C.target.value, i(E);
-    }, className: "text-[8px] font-bold border-2 border-black bg-white p-1", children: [jsx("option", { children: "Easy" }), jsx("option", { children: "Normal" }), jsx("option", { children: "Hard" }), jsx("option", { children: "Expert" })] })] }), jsxs("div", { className: "mt-1 text-[7px] text-[#5a4a3a] leading-[1.1]", children: [F.bonuses[0], " \u2022 ", F.bonuses[1], " \u2022 ", c.difficulty, " AI ", c.difficulty === "Expert" ? "+80% econ" : c.difficulty === "Hard" ? "+40%" : c.difficulty === "Easy" ? "-30%" : ""] })] }, P);
-  }) }), jsxs("button", { onClick: () => e({ playerNationId: n, opponents: u, mapSize: a }), className: "mt-4 w-full py-3 bg-[#7CFC00] border-[4px] border-black font-black tracking-[0.2em] text-[13px] shadow-[4px_4px_0_#000] hover:translate-y-[1px] hover:shadow-[3px_3px_0_#000] active:translate-y-[2px] active:shadow-[1px_1px_0_#000] transition-all", children: ["ENTER WAR MAP \u25B6 ", a, "x", a, " \u2022 ", r + 1, " NATIONS"] }), jsx("div", { className: "mt-2 text-[7px] text-center text-[#5a4a3a]", children: "Landscape recommended \u2022 Rotate device \u2022 Team vision: allies share explored & visible tiles" })] }), jsxs("div", { className: "bg-[#2b241e] border-[4px] border-black p-2 text-[8px] text-[#a89a7a] leading-[1.3] shadow-[3px_3px_0_#000]", children: [jsx("b", { className: "text-[#e8dcc0]", children: "DIPLOMACY:" }), " Mark opponent as ALLY to share line-of-sight. Your allies' units reveal map for you, and you see their fights. Enemy units hidden unless in your or ally's sight. Black = never explored. Dark = explored but not currently visible."] })] })] })] }) });
+  }, [opponentCount]);
+
+  const selectedNation = getNation(nationId);
+  const mapSize = 28 + opponentCount * 5;
+  const mapLabel = mapSize < 35 ? "SMALL" : mapSize < 45 ? "MEDIUM" : "LARGE";
+  const updateOpponent = (index, changes) => setOpponents((current) => current.map((item, i) => i === index ? { ...item, ...changes } : item));
+
+  return jsxs("div", {
+    className: "w-full h-full overflow-y-auto overflow-x-hidden text-[#f4ead4] bg-[#101923]",
+    style: { fontFamily: '"Courier New", monospace' },
+    children: [
+      jsxs("header", {
+        className: "sticky top-0 z-20 flex items-center justify-between gap-3 px-4 py-3 border-b-2 border-[#c69b54] bg-[#111b27]/95 shadow-lg",
+        children: [
+          jsxs("div", { className: "min-w-0", children: [
+            jsx("div", { className: "text-[10px] tracking-[.28em] text-[#c69b54] font-bold", children: "AGE OF PIXEL WAR" }),
+            jsx("h1", { className: "text-lg sm:text-xl font-black tracking-[.12em] leading-tight", children: "PERSIAPAN PERANG" })
+          ]}),
+          jsx("div", { className: "shrink-0 text-[9px] tracking-widest text-[#b8c5d3] border border-[#536579] px-3 py-2", children: "TAHAP 01 / 02" })
+        ]
+      }),
+      jsxs("main", {
+        className: "max-w-[1440px] mx-auto p-3 sm:p-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,.8fr)] gap-4",
+        children: [
+          jsxs("section", { className: "min-w-0", children: [
+            jsxs("div", { className: "mb-3 flex flex-wrap items-end justify-between gap-2", children: [
+              jsxs("div", { children: [
+                jsx("div", { className: "text-[10px] font-bold tracking-[.25em] text-[#d8b36d]", children: "PILIH PERADABANMU" }),
+                jsx("h2", { className: "text-xl sm:text-2xl font-black mt-1", children: "Pilih Negara" }),
+                jsx("p", { className: "text-[11px] text-[#aebdca] mt-1", children: "Pilih satu negara untuk memimpin pasukanmu." })
+              ]}),
+              jsx("div", { className: "text-[10px] text-[#aebdca] border border-[#405367] px-3 py-2", children: "8 NEGARA TERSEDIA" })
+            ]}),
+            jsx("div", { className: "grid grid-cols-2 sm:grid-cols-4 gap-2", children: NATIONS.map((nation) => {
+              const active = nationId === nation.id;
+              return jsxs("button", {
+                type: "button",
+                onClick: () => setNationId(nation.id),
+                "aria-pressed": active,
+                className: "relative min-w-0 text-left p-3 border-2 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-[#e8c47c] " + (active ? "bg-[#263b4d] border-[#e8c47c] shadow-[0_0_0_2px_#263b4d,0_0_18px_rgba(232,196,124,.18)]" : "bg-[#182634] border-[#405367] hover:border-[#8fa4b8]"),
+                children: [
+                  jsxs("div", { className: "flex items-center justify-between gap-1 mb-2", children: [
+                    jsx("span", { className: "text-2xl leading-none", children: nation.flag }),
+                    active ? jsx("span", { className: "text-[9px] font-black tracking-wider text-[#17212b] bg-[#e8c47c] px-2 py-1", children: "DIPILIH" }) : jsx("span", { className: "w-4 h-4 border border-[#60758a] rounded-full" })
+                  ]}),
+                  jsx("div", { className: "font-black text-[12px] sm:text-sm tracking-wider truncate", children: nation.name.toUpperCase() }),
+                  jsx("div", { className: "h-[3px] w-full my-2", style: { background: nation.color } }),
+                  jsx("div", { className: "text-[9px] sm:text-[10px] leading-snug text-[#b8c5d3] min-h-[28px]", children: nation.description })
+                ]
+              }, nation.id);
+            })}),
+            jsxs("div", { className: "mt-3 p-3 sm:p-4 border border-[#c69b54] bg-[#1b2a38] grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] gap-3", children: [
+              jsxs("div", { className: "flex sm:flex-col items-center sm:items-start gap-3 sm:gap-2 sm:min-w-[110px]", children: [
+                jsx("span", { className: "text-4xl", children: selectedNation.flag }),
+                jsxs("div", { children: [
+                  jsx("div", { className: "text-[9px] tracking-[.2em] text-[#d8b36d]", children: "NEGARA PILIHAN" }),
+                  jsx("div", { className: "text-lg font-black tracking-wider", children: selectedNation.name.toUpperCase() })
+                ]})
+              ]}),
+              jsxs("div", { className: "min-w-0", children: [
+                jsx("p", { className: "text-[11px] leading-relaxed text-[#d2dce5]", children: selectedNation.description }),
+                jsxs("div", { className: "mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2", children: [
+                  jsxs("div", { className: "p-2 bg-[#111b27] border border-[#405367]", children: [
+                    jsx("div", { className: "text-[9px] tracking-widest text-[#d8b36d] mb-1", children: "KEUNGGULAN" }),
+                    jsx("ul", { className: "space-y-1", children: selectedNation.bonuses.map((bonus) => jsxs("li", { className: "text-[10px] text-[#e5edf4] flex gap-2", children: [jsx("span", { className: "text-[#e8c47c]", children: "◆" }), bonus] }, bonus)) })
+                  ]}),
+                  jsxs("div", { className: "p-2 bg-[#111b27] border border-[#405367]", children: [
+                    jsx("div", { className: "text-[9px] tracking-widest text-[#d8b36d] mb-1", children: "UNIT KHUSUS" }),
+                    jsx("div", { className: "text-sm font-black", children: selectedNation.uniqueUnit.toUpperCase() }),
+                    jsx("div", { className: "text-[9px] text-[#aebdca] mt-1", children: "Unit khas peradaban ini." }),
+                    jsxs("div", { className: "flex items-center gap-2 mt-2", children: [
+                      jsx("span", { className: "w-3 h-3 border border-white/30", style: { background: selectedNation.color } }),
+                      jsx("span", { className: "text-[9px] text-[#aebdca]", children: "Warna pasukan" })
+                    ]})
+                  ]})
+                ]})
+              ]})
+            ]})
+          ]}),
+          jsxs("aside", { className: "min-w-0 flex flex-col gap-3", children: [
+            jsxs("section", { className: "p-3 sm:p-4 bg-[#182634] border border-[#405367]", children: [
+              jsx("div", { className: "text-[10px] tracking-[.22em] text-[#d8b36d] font-bold", children: "PENGATURAN PERTANDINGAN" }),
+              jsx("h2", { className: "text-lg font-black mt-1", children: "Lawan & Peta" }),
+              jsxs("div", { className: "mt-3 flex items-center justify-between gap-3", children: [
+                jsx("label", { htmlFor: "opponent-count", className: "text-[11px] text-[#d2dce5]", children: "Jumlah lawan" }),
+                jsxs("span", { className: "text-sm font-black text-[#e8c47c]", children: [opponentCount, " / 7"] })
+              ]}),
+              jsx("input", { id: "opponent-count", type: "range", min: 1, max: 7, value: opponentCount, onChange: (event) => setOpponentCount(Number(event.target.value)), className: "w-full mt-2 accent-[#e8c47c]" }),
+              jsxs("div", { className: "grid grid-cols-2 gap-2 mt-3", children: [
+                jsxs("div", { className: "p-2 bg-[#111b27] border border-[#405367]", children: [
+                  jsx("div", { className: "text-[9px] text-[#aebdca] tracking-widest", children: "UKURAN PETA" }),
+                  jsx("div", { className: "font-black text-sm mt-1", children: mapLabel }),
+                  jsxs("div", { className: "text-[10px] text-[#d2dce5]", children: [mapSize, " × ", mapSize, " tile"] })
+                ]}),
+                jsxs("div", { className: "p-2 bg-[#111b27] border border-[#405367]", children: [
+                  jsx("div", { className: "text-[9px] text-[#aebdca] tracking-widest", children: "TOTAL NEGARA" }),
+                  jsx("div", { className: "font-black text-sm mt-1", children: opponentCount + 1 }),
+                  jsx("div", { className: "text-[10px] text-[#d2dce5]", children: "Termasuk negaramu" })
+                ]})
+              ]}),
+              jsx("div", { className: "mt-4 text-[9px] tracking-widest text-[#d8b36d] font-bold", children: "PENGATURAN SETIAP LAWAN" }),
+              jsx("div", { className: "mt-2 space-y-2 max-h-[310px] overflow-y-auto pr-1", children: opponents.map((opponent, index) => {
+                const nation = getNation(opponent.nationId);
+                return jsxs("div", { className: "p-2 bg-[#111b27] border border-[#405367]", children: [
+                  jsxs("div", { className: "flex items-center justify-between gap-2 mb-2", children: [
+                    jsxs("div", { className: "flex items-center gap-2 min-w-0", children: [
+                      jsx("span", { className: "text-xl", children: nation.flag }),
+                      jsxs("div", { className: "min-w-0", children: [
+                        jsx("div", { className: "text-[10px] font-black", children: "LAWAN " + (index + 1) }),
+                        jsx("div", { className: "text-[9px] text-[#aebdca] truncate", children: nation.name })
+                      ]})
+                    ]}),
+                    jsx("button", { type: "button", onClick: () => updateOpponent(index, { team: opponent.team === "enemy" ? "ally" : "enemy" }), className: "shrink-0 px-2 py-1 text-[9px] font-black border " + (opponent.team === "ally" ? "bg-[#315a45] border-[#75b98b] text-white" : "bg-[#5b3038] border-[#c87979] text-white"), children: opponent.team === "ally" ? "SEKUTU" : "MUSUH" })
+                  ]}),
+                  jsxs("div", { className: "grid grid-cols-2 gap-2", children: [
+                    jsxs("label", { className: "text-[9px] text-[#aebdca]", children: [
+                      "NEGARA",
+                      jsx("select", { value: opponent.nationId, onChange: (event) => updateOpponent(index, { nationId: event.target.value }), className: "block w-full mt-1 p-2 bg-[#263b4d] border border-[#536b80] text-[#f4ead4] text-[10px]", children: NATIONS.map((item) => jsx("option", { value: item.id, children: item.name }, item.id)) })
+                    ]}),
+                    jsxs("label", { className: "text-[9px] text-[#aebdca]", children: [
+                      "KESULITAN",
+                      jsx("select", { value: opponent.difficulty, onChange: (event) => updateOpponent(index, { difficulty: event.target.value }), className: "block w-full mt-1 p-2 bg-[#263b4d] border border-[#536b80] text-[#f4ead4] text-[10px]", children: ["Easy", "Normal", "Hard", "Expert"].map((level) => jsx("option", { value: level, children: level }, level)) })
+                    ]})
+                  ]})
+                ]}, index);
+              })})
+            ]}),
+            jsxs("div", { className: "p-3 bg-[#182634] border border-[#405367]", children: [
+              jsx("div", { className: "text-[9px] text-[#d8b36d] tracking-widest font-bold", children: "SEBELUM MEMULAI" }),
+              jsx("p", { className: "text-[10px] leading-relaxed text-[#b8c5d3] mt-1", children: "Negara yang kamu pilih akan menjadi peradaban pemain. Sekutu berbagi penglihatan peta; musuh akan menyerang sesuai tingkat kesulitan." }),
+              jsx("button", { type: "button", onClick: () => onStart({ playerNationId: nationId, opponents, mapSize }), className: "w-full mt-3 py-3 px-3 bg-[#d8ad62] hover:bg-[#edc77e] active:translate-y-px text-[#17212b] border-2 border-[#f6d99f] font-black tracking-[.14em] text-[12px] shadow-[0_3px_0_#75542c] transition-all", children: ["MULAI PERTANDINGAN  ▶"] })
+            ]})
+          ]})
+        ]
+      })
+    ]
+  });
 }
