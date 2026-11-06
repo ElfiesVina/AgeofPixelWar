@@ -1,0 +1,25 @@
+/* Splash, Home, Settings, Credits. Tailwind hasil generate tidak memuat kelas baru, jadi gaya ada di sini. */
+.apw-screen { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at center, #2b241e 0%, #14100c 70%, #0a0a0f 100%); color: #e8dcc0;
+  font-family: "Courier New", monospace; text-align: center; padding: 8px 16px; box-sizing: border-box; overflow: hidden; }
+.apw-screen::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px); }
+.apw-logo { width: min(34vh, 200px); height: auto; image-rendering: pixelated; shape-rendering: crispEdges; }
+.apw-title { margin: 6px 0 0; font-weight: 900; letter-spacing: .18em; font-size: clamp(18px, 6vh, 34px); color: #ffd24a;
+  text-shadow: 3px 3px 0 #000, -1px -1px 0 #7a3b12; }
+.apw-sub { margin: 2px 0 0; font-size: clamp(9px, 2.6vh, 13px); letter-spacing: .3em; color: #a89a7a; }
+.apw-loading { margin-top: 14px; font-size: 11px; color: #a89a7a; letter-spacing: .15em; }
+.apw-bar { width: min(50vw, 260px); height: 10px; border: 2px solid #e8dcc0; background: #000; margin-top: 6px; }
+.apw-bar > i { display: block; height: 100%; width: 0; background: #7CFC00; animation: apwLoad 2.6s steps(14) forwards; }
+@keyframes apwLoad { to { width: 100%; } }
+.apw-fade { animation: apwFade .5s ease-out; }
+@keyframes apwFade { from { opacity: 0; } to { opacity: 1; } }
+.apw-menu { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; z-index: 1; }
+.apw-btn { min-width: 220px; min-height: 48px; padding: 8px 22px; font: 900 16px "Courier New", monospace; letter-spacing: .2em;
+  color: #fff; background: #3b6e22; border: 4px solid #fff; box-shadow: 5px 5px 0 #000; cursor: pointer; }
+.apw-btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 #000; }
+.apw-btn.alt { background: #4a3a2a; }
+.apw-btn.danger { background: #7a1f1f; }
+.apw-ver { position: absolute; bottom: 6px; right: 10px; font-size: 10px; color: #a89a7a; z-index: 1; }
+.apw-panel { z-index: 1; max-width: 520px; font-size: 13px; line-height: 1.5; border: 4px solid #fff; background: #1a1611; padding: 14px 20px; box-shadow: 6px 6px 0 #000; }
+.apw-panel h2 { margin: 0 0 8px; color: #ffd24a; letter-spacing: .2em; font-size: 16px; }

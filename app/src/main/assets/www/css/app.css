@@ -1,0 +1,8 @@
+/* Override tipis untuk shell WebView (bukan bagian dari CSS Tailwind hasil generate). */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0a0a0f;                 /* hindari kilatan putih saat start */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
