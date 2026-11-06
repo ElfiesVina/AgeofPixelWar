@@ -1,0 +1,11 @@
+[versions]
+agp = "8.13.0"          # minimal 8.9.1 untuk compileSdk 36
+androidxCore = "1.15.0"
+androidxWebkit = "1.12.1"
+
+[libraries]
+androidx-core = { group = "androidx.core", name = "core", version.ref = "androidxCore" }
+androidx-webkit = { group = "androidx.webkit", name = "webkit", version.ref = "androidxWebkit" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
