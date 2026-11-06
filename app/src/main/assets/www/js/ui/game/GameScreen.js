@@ -585,7 +585,7 @@ function GameScreen({ config, onExit }) {
         let centerX = (d.touches[0].clientX + d.touches[1].clientX) / 2, centerY = (d.touches[0].clientY + d.touches[1].clientY) / 2;
         if (pinchDistance > 0) {
           let previousZoom = zoom;
-          zoom = Math.max(0.5, Math.min(2.2, zoom * (distance / pinchDistance));
+          zoom = Math.max(0.5, Math.min(2.2, zoom * (distance / pinchDistance)));
           camX = centerX - window.innerWidth / 2 - (centerX - window.innerWidth / 2 - camX) * (zoom / previousZoom);
           camY = centerY - window.innerHeight / 2 - (centerY - window.innerHeight / 2 - camY) * (zoom / previousZoom);
         }
