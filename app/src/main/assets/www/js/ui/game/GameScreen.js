@@ -538,54 +538,73 @@ function GameScreen({ config, onExit }) {
       let { clientX: h, clientY: o } = d;
       camX = h - window.innerWidth / 2 - (h - window.innerWidth / 2 - camX) * (zoom / _), camY = o - window.innerHeight / 2 - (o - window.innerHeight / 2 - camY) * (zoom / _);
     }, { passive: false });
-    let pinchDistance = 0;
+    let pinchDistance = 0, touchGesture = null;
+    const finishTouchTap = (touch) => {
+      let world = screenToWorld(touch.clientX, touch.clientY), hit = null, nearest = 2.5;
+      for (let entity of [...buildings, ...units]) {
+        let x = Math.floor(entity.x), y = Math.floor(entity.y);
+        if (!explored[x]?.[y] || (!isFriendly(entity.ownerId) && !visible[x]?.[y])) continue;
+        let distance = Math.hypot(entity.x - world.x, entity.y - world.y);
+        if (distance < nearest) nearest = distance, hit = entity;
+      }
+      if (hit) {
+        if (selectedId && selectedId !== hit.id && !isFriendly(hit.ownerId)) {
+          let selectedUnit = units.find((unit) => unit.id === selectedId);
+          if (selectedUnit && selectedUnit.type !== "villager") {
+            selectedUnit.attackTarget = hit.id, selectedUnit.state = "move", selectedUnit.tx = hit.x, selectedUnit.ty = hit.y;
+          } else selectedId = hit.id;
+        } else selectedId = hit.id;
+      } else {
+        let selectedUnit = units.find((unit) => unit.id === selectedId);
+        if (selectedUnit) selectedUnit.tx = world.x, selectedUnit.ty = world.y, selectedUnit.state = "move", selectedUnit.attackTarget = void 0;
+      }
+    };
     return canvas.addEventListener("touchstart", (d) => {
       if (d.touches.length === 1) {
-        let y = d.touches[0];
-        pointerWorld = screenToWorld(y.clientX, y.clientY);
+        let touch = d.touches[0];
+        pointerScreen.x = touch.clientX, pointerScreen.y = touch.clientY;
+        pointerWorld = screenToWorld(touch.clientX, touch.clientY);
+        touchGesture = { startX: touch.clientX, startY: touch.clientY, lastX: touch.clientX, lastY: touch.clientY, moved: false };
       } else if (d.touches.length === 2) {
-        let y = d.touches[0].clientX - d.touches[1].clientX, _ = d.touches[0].clientY - d.touches[1].clientY;
-        pinchDistance = Math.hypot(y, _);
+        if (touchGesture) touchGesture.moved = true;
+        let x = d.touches[0].clientX - d.touches[1].clientX, y = d.touches[0].clientY - d.touches[1].clientY;
+        pinchDistance = Math.hypot(x, y);
       }
     }), canvas.addEventListener("touchmove", (d) => {
-      if (d.preventDefault(), d.touches.length === 1) {
-        let y = d.touches[0];
-        if (!buildMode) camX += y.clientX - pointerScreen.x, camY += y.clientY - pointerScreen.y, pointerScreen.x = y.clientX, pointerScreen.y = y.clientY;
-        else pointerWorld = screenToWorld(y.clientX, y.clientY);
+      d.preventDefault();
+      if (d.touches.length === 1) {
+        let touch = d.touches[0];
+        if (touchGesture && Math.hypot(touch.clientX - touchGesture.startX, touch.clientY - touchGesture.startY) > 8) touchGesture.moved = true;
+        if (!buildMode) {
+          if (touchGesture?.moved) camX += touch.clientX - touchGesture.lastX, camY += touch.clientY - touchGesture.lastY;
+          pointerScreen.x = touch.clientX, pointerScreen.y = touch.clientY;
+        } else pointerWorld = screenToWorld(touch.clientX, touch.clientY);
+        if (touchGesture) touchGesture.lastX = touch.clientX, touchGesture.lastY = touch.clientY;
       } else if (d.touches.length === 2) {
-        let y = d.touches[0].clientX - d.touches[1].clientX, _ = d.touches[0].clientY - d.touches[1].clientY, h = Math.hypot(y, _);
+        let x = d.touches[0].clientX - d.touches[1].clientX, y = d.touches[0].clientY - d.touches[1].clientY, distance = Math.hypot(x, y);
+        let centerX = (d.touches[0].clientX + d.touches[1].clientX) / 2, centerY = (d.touches[0].clientY + d.touches[1].clientY) / 2;
         if (pinchDistance > 0) {
-          let o = h / pinchDistance;
-          zoom = Math.max(0.5, Math.min(2.2, zoom * o));
+          let previousZoom = zoom;
+          zoom = Math.max(0.5, Math.min(2.2, zoom * (distance / pinchDistance));
+          camX = centerX - window.innerWidth / 2 - (centerX - window.innerWidth / 2 - camX) * (zoom / previousZoom);
+          camY = centerY - window.innerHeight / 2 - (centerY - window.innerHeight / 2 - camY) * (zoom / previousZoom);
         }
-        pinchDistance = h;
+        pinchDistance = distance;
       }
     }, { passive: false }), canvas.addEventListener("touchend", (d) => {
       if (d.touches.length === 0 && buildMode) {
         if (ghostValid) {
-          let y = BUILDINGS[buildMode], _ = { ...y.cost };
-          if (y.id === "house" && myNation.id === "british") _.wood = Math.floor(_.wood * 0.75);
-          if (canAfford(_, "player")) spendResources(_, "player"), placeBuilding(y, ghostX, ghostY, "player", myNation.id), buildMode = null, setHud((h) => ({ ...h, buildMode: null }));
+          let building = BUILDINGS[buildMode], cost = { ...building.cost };
+          if (building.id === "house" && myNation.id === "british") cost.wood = Math.floor(cost.wood * 0.75);
+          if (canAfford(cost, "player")) spendResources(cost, "player"), placeBuilding(building, ghostX, ghostY, "player", myNation.id), buildMode = null, setHud((h) => ({ ...h, buildMode: null }));
         }
-      } else if (d.changedTouches.length === 1 && !buildMode) {
-        let y = d.changedTouches[0], _ = screenToWorld(y.clientX, y.clientY), h = null, o = 2.5;
-        for (let g of [...buildings, ...units]) {
-          let k = Math.floor(g.x), $ = Math.floor(g.y);
-          if (!explored[k]?.[$]) continue;
-          if (!isFriendly(g.ownerId) && !visible[k][$]) continue;
-          let T = Math.hypot(g.x - _.x, g.y - _.y);
-          if (T < o) o = T, h = g;
-        }
-        if (h) if (selectedId && selectedId !== h.id && !isFriendly(h.ownerId)) {
-          let g = units.find((k) => k.id === selectedId);
-          if (g && g.type !== "villager") g.attackTarget = h.id, g.state = "move", g.tx = h.x, g.ty = h.y;
-          else selectedId = h.id;
-        } else selectedId = h.id;
-        else {
-          let g = units.find((k) => k.id === selectedId);
-          if (g) g.tx = _.x, g.ty = _.y, g.state = "move", g.attackTarget = void 0;
-        }
+        touchGesture = null;
+      } else if (d.touches.length === 0) {
+        if (d.changedTouches.length === 1 && !buildMode && touchGesture && !touchGesture.moved) finishTouchTap(d.changedTouches[0]);
+        touchGesture = null, pinchDistance = 0;
       }
+    }), canvas.addEventListener("touchcancel", () => {
+      touchGesture = null, pinchDistance = 0;
     }), window.addEventListener("keydown", (d) => {
       if (keys[d.key.toLowerCase()] = true, d.key === "Escape") buildMode = null, setHud((y) => ({ ...y, buildMode: null }));
     }), window.addEventListener("keyup", (d) => {
