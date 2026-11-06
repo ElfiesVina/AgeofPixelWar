@@ -45,3 +45,23 @@ html, body {
 #root [class*="bg-[#111b27]/95"] { background-color: rgba(17,27,39,.95) !important; }
 #root [class*="shadow-[0_3px_0_#75542c]"] { box-shadow: 0 3px 0 #75542c; }
 #root [class*="hover:bg-[#edc77e]"]:hover { background-color: #edc77e; }
+
+/* Restore the remaining arbitrary sizing/layout utilities used by the lobby. */
+#root [class*="text-[9px]"] { font-size: 9px; }
+#root [class*="text-[10px]"] { font-size: 10px; }
+#root [class*="text-[11px]"] { font-size: 11px; }
+#root [class*="text-[12px]"] { font-size: 12px; }
+#root [class*="text-[40px]"] { font-size: 40px; }
+#root [class*="tracking-[.28em]"] { letter-spacing: .28em; }
+#root [class*="tracking-[.25em]"] { letter-spacing: .25em; }
+#root [class*="tracking-[.22em]"] { letter-spacing: .22em; }
+#root [class*="tracking-[.2em]"] { letter-spacing: .2em; }
+#root [class*="tracking-[.14em]"] { letter-spacing: .14em; }
+#root [class*="tracking-[.12em]"] { letter-spacing: .12em; }
+#root [class*="lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,.8fr)]"] { grid-template-columns: minmax(0,1.7fr) minmax(280px,.8fr); }
+@media (max-width: 1023px) {
+  #root [class*="lg:grid-cols-[minmax(0,1.7fr)_minmax(280px,.8fr)]"] { grid-template-columns: minmax(0,1fr); }
+}
+@media (min-width: 640px) {
+  #root [class*="sm:grid-cols-[auto_minmax(0,1fr)]"] { grid-template-columns: auto minmax(0,1fr); }
+}
