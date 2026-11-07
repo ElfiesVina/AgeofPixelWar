@@ -127,7 +127,7 @@ function GameScreen({ config, onExit }) {
     }
     // ===== GAME LOOP: wave musuh, konstruksi, antrean latih, tower, AI unit, gathering, gerak, proyektil, partikel, sync HUD =====
     let lastFrameTime = performance.now(), hudAccumulator = 0, gameLoop = (d) => {
-            if (gameOver) {
+      if (gameOver) {
         setHud((g) => (g.gameOver === gameOver ? g : { ...g, gameOver: gameOver }));
         drawWorld(), requestAnimationFrame(gameLoop);
         return;
