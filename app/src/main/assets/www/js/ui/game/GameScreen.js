@@ -24,6 +24,83 @@ function GameScreen({ config, onExit }) {
       let _ = (d - window.innerWidth / 2 - camX) / zoom, h = (y - window.innerHeight / 2 - camY) / zoom, o = (_ / (TILE_W / 2) + h / (TILE_H / 2)) / 2, g = (h / (TILE_H / 2) - _ / (TILE_W / 2)) / 2;
       return { x: o, y: g };
     }
+    // ===== RTS PATHFINDING: A* Search menghindari bangunan =====
+    function isWalkable(x, y, allowTarget = false, targetX = -1, targetY = -1) {
+      if (x < 0 || y < 0 || x >= mapSize || y >= mapSize) return false;
+      if (allowTarget && x === targetX && y === targetY) return true;
+      return !occupied[x][y];
+    }
+    function findGridPath(startX, startY, endX, endY) {
+      let sx = Math.floor(startX), sy = Math.floor(startY), ex = Math.floor(endX), ey = Math.floor(endY);
+      if (sx === ex && sy === ey) return [{ x: endX, y: endY }];
+      
+      // Jika tujuan persis berada di atas gedung, cari petak kosong terdekat di sampingnya
+      if (occupied[ex]?.[ey]) {
+        let bestDist = 999, altX = ex, altY = ey;
+        for (let dx = -1; dx <= 1; dx++) {
+          for (let dy = -1; dy <= 1; dy++) {
+            let nx = ex + dx, ny = ey + dy;
+            if (isWalkable(nx, ny)) {
+              let d = Math.hypot(nx - sx, ny - sy);
+              if (d < bestDist) bestDist = d, altX = nx, altY = ny;
+            }
+          }
+        }
+        ex = altX; ey = altY;
+      }
+      
+      // A* Search sederhana & ringan untuk mobile
+      let openSet = [{ x: sx, y: sy, g: 0, f: Math.hypot(ex - sx, ey - sy) }];
+      let cameFrom = new Map();
+      let gScore = new Map();
+      let key = (x, y) => `${x},${y}`;
+      gScore.set(key(sx, sy), 0);
+      let steps = 0;
+
+      while (openSet.length > 0 && steps < 250) {
+        steps++;
+        openSet.sort((a, b) => a.f - b.f);
+        let current = openSet.shift();
+        if (current.x === ex && current.y === ey) {
+          let path = [{ x: endX, y: endY }];
+          let currKey = key(current.x, current.y);
+          while (cameFrom.has(currKey)) {
+            let prev = cameFrom.get(currKey);
+            currKey = key(prev.x, prev.y);
+            if (cameFrom.has(currKey)) path.unshift({ x: prev.x + 0.5, y: prev.y + 0.5 });
+          }
+          return path;
+        }
+
+        let neighbors = [
+          { x: current.x + 1, y: current.y },
+          { x: current.x - 1, y: current.y },
+          { x: current.x, y: current.y + 1 },
+          { x: current.x, y: current.y - 1 }
+        ];
+
+        for (let nb of neighbors) {
+          if (!isWalkable(nb.x, nb.y, true, ex, ey)) continue;
+          let tentativeG = (gScore.get(key(current.x, current.y)) || 0) + 1;
+          let nbKey = key(nb.x, nb.y);
+          if (tentativeG < (gScore.get(nbKey) ?? 9999)) {
+            cameFrom.set(nbKey, current);
+            gScore.set(nbKey, tentativeG);
+            let h = Math.hypot(ex - nb.x, ey - nb.y);
+            let existing = openSet.find(o => o.x === nb.x && o.y === nb.y);
+            if (!existing) openSet.push({ x: nb.x, y: nb.y, g: tentativeG, f: tentativeG + h });
+            else existing.g = tentativeG, existing.f = tentativeG + h;
+          }
+        }
+      }
+      return [{ x: endX, y: endY }];
+    }
+    function setUnitTarget(unit, targetX, targetY) {
+      unit.tx = targetX;
+      unit.ty = targetY;
+      unit.path = findGridPath(unit.x, unit.y, targetX, targetY);
+      unit.state = "move";
+    }
     // ===== RELASI TIM: pemain + sekutu = friendly; enemy = lawan; AI musuh tidak saling serang =====
     function isFriendly(d) {
       if (d === "player") return true;
@@ -288,15 +365,20 @@ function GameScreen({ config, onExit }) {
           }
         }
         if (o.state === "move" || (o.tx !== o.x || o.ty !== o.y)) {
-          let k = o.tx - o.x, $ = o.ty - o.y, T = Math.hypot(k, $);
-          if (T < 0.1) {
-            if (o.x = o.tx, o.y = o.ty, o.state === "move") o.state = "idle";
+          let targetNode = (o.path && o.path.length > 0) ? o.path[0] : { x: o.tx, y: o.ty };
+          let k = targetNode.x - o.x, $ = targetNode.y - o.y, T = Math.hypot(k, $);
+          if (T < 0.25) {
+            if (o.path && o.path.length > 1) {
+              o.path.shift();
+            } else {
+              o.path = null;
+              o.x = o.tx; o.y = o.ty;
+              if (o.state === "move") o.state = "idle";
+            }
           } else {
-            let S = k / T * g.speed * y, D = $ / T * g.speed * y, w = o.x + S, ne = o.y + D, ae = Math.floor(w), X = Math.floor(ne);
-            if (ae >= 0 && X >= 0 && ae < mapSize && X < mapSize && occupied[ae][X]) if (!occupied[Math.floor(o.x)][X]) w = o.x;
-            else if (!occupied[ae][Math.floor(o.y)]) ne = o.y;
-            else o.tx = o.x, o.ty = o.y, o.state = "idle";
-            o.x = w, o.y = ne;
+            let moveDist = Math.min(T, g.speed * y);
+            o.x += (k / T) * moveDist;
+            o.y += ($ / T) * moveDist;
           }
         }
       }
@@ -615,13 +697,16 @@ function GameScreen({ config, onExit }) {
           selectedId = hit.id, lastTappedId = hit.id, lastTapTime = now;
         }
       } else if (mine) {
-        // 3. Sentuh tanah kosong: hanya unit milik pemain yang boleh diperintah.
-        mine.tx = world.x, mine.ty = world.y, mine.state = "move", mine.attackTarget = void 0;
+        setUnitTarget(mine, world.x, world.y);
+        mine.attackTarget = void 0;
         if (groupSelectedIds.length > 1) {
           units.forEach((u, idx) => {
             if (groupSelectedIds.includes(u.id) && u.id !== mine.id) {
               let angle = idx * (Math.PI * 2 / groupSelectedIds.length);
-              u.tx = world.x + Math.cos(angle) * 0.8, u.ty = world.y + Math.sin(angle) * 0.8, u.state = "move", u.attackTarget = void 0;
+              let targetX = Math.max(1, Math.min(mapSize - 2, world.x + Math.cos(angle) * 0.8));
+              let targetY = Math.max(1, Math.min(mapSize - 2, world.y + Math.sin(angle) * 0.8));
+              setUnitTarget(u, targetX, targetY);
+              u.attackTarget = void 0;
             }
           });
         }
