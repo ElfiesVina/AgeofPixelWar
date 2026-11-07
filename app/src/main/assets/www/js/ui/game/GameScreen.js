@@ -14,7 +14,7 @@ function GameScreen({ config, onExit }) {
       let _ = `opp_${y}`, h = d.difficulty === "Easy" ? 0.7 : d.difficulty === "Hard" ? 1.4 : d.difficulty === "Expert" ? 1.8 : 1;
       if (economy[_] = { wood: Math.floor(400 * h), food: Math.floor(400 * h), coin: Math.floor(400 * h), pop: 0, popCap: 20 }, d.def.id === "spanish") economy[_].coin += 100;
     });
-    let alive = true, ottomanTimer = 0, dutchTimer = 0, selectedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
+    let alive = true, ottomanTimer = 0, dutchTimer = 0, selectedId = null, groupSelectedIds = [], lastTapTime = 0, lastTappedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
     // ===== KOORDINAT ISOMETRIK: dunia (tile) <-> layar (px), memakai camX/camY/zoom =====
     function worldToScreen(d, y) {
       let _ = (d - y) * TILE_W / 2, h = (d + y) * TILE_H / 2;
@@ -374,6 +374,8 @@ function GameScreen({ config, onExit }) {
     }
     function drawTile(d, y, _) {
       let { x: h, y: o } = worldToScreen(d + 0.5, y + 0.5);
+      let halfW = (TILE_W / 2) * zoom + 8, halfH = (TILE_H / 2) * zoom + 8;
+      if (h + halfW < 0 || h - halfW > window.innerWidth || o + halfH < 0 || o - halfH > window.innerHeight) return;
       ctx.save(), ctx.translate(h, o);
       let g = explored[d]?.[y], k = visible[d]?.[y];
       if (!g) {
@@ -393,6 +395,8 @@ function GameScreen({ config, onExit }) {
       let k = isFriendly(d.ownerId), $ = !k && !g, T = !g && o;
       if ($ && d.type !== "townCenter" && d.type !== "house" && d.type !== "barracks" && d.type !== "tower") ;
       let { x: S, y: D } = worldToScreen(d.x, d.y), w = zoom, ne = getNation(d.nationId), ae = ne.color;
+      let bMargin = 100 * w;
+      if (S + bMargin < 0 || S - bMargin > window.innerWidth || D + bMargin < 0 || D - bMargin > window.innerHeight) return;
       if (ctx.save(), ctx.translate(S, D), T) ctx.globalAlpha = 0.55;
       if (ctx.fillStyle = "rgba(0,0,0,0.22)", ctx.beginPath(), ctx.ellipse(0, 4 * w, y.w * TILE_W / 2 * w * 0.5, y.h * TILE_H / 2 * w * 0.25, 0, 0, Math.PI * 2), ctx.fill(), ctx.fillStyle = k ? shadeColor(ae, 30) : ae, d.type === "wall") ctx.fillStyle = "#5c3f2a";
       if (d.buildProgress !== void 0 && d.buildProgress < 1) ctx.globalAlpha = 0.4 + d.buildProgress * 0.6;
@@ -409,6 +413,8 @@ function GameScreen({ config, onExit }) {
       if (!(visible[y]?.[_] || isFriendly(d.ownerId)) && !isFriendly(d.ownerId)) return;
       if (!explored[y]?.[_]) return;
       let { x: o, y: g } = worldToScreen(d.x, d.y), k = zoom, $ = getNation(d.nationId);
+      let uMargin = 40 * k;
+      if (o + uMargin < 0 || o - uMargin > window.innerWidth || g + uMargin < 0 || g - uMargin > window.innerHeight) return;
       if (ctx.save(), ctx.translate(o, g), !visible[y][_] && isFriendly(d.ownerId)) ctx.globalAlpha = 0.7;
       ctx.fillStyle = "rgba(0,0,0,0.25)", ctx.beginPath(), ctx.ellipse(0, 4 * k, 8 * k, 4 * k, 0, 0, Math.PI * 2), ctx.fill();
       let T = "#e0d5c0";
@@ -425,7 +431,7 @@ function GameScreen({ config, onExit }) {
         let ne = 16 * k;
         ctx.fillStyle = "#000", ctx.fillRect(-ne / 2, -22 * k, ne, 3 * k), ctx.fillStyle = isFriendly(d.ownerId) ? "#7CFC00" : "#ff4a4a", ctx.fillRect(-ne / 2 + 1, -21 * k, (ne - 2) * (d.hp / d.maxHp), 1.5 * k);
       }
-      if (d.id === selectedId) ctx.strokeStyle = "#fff", ctx.lineWidth = 1.2, ctx.beginPath(), ctx.arc(0, 0, 12 * k, 0, Math.PI * 2), ctx.stroke();
+      if (d.id === selectedId || groupSelectedIds.includes(d.id)) ctx.strokeStyle = "#fff", ctx.lineWidth = 1.2, ctx.beginPath(), ctx.arc(0, 0, 12 * k, 0, Math.PI * 2), ctx.stroke();
       ctx.restore();
     }
     const tileOrder = (() => {
@@ -444,6 +450,8 @@ function GameScreen({ config, onExit }) {
         if (!explored[g]?.[k]) continue;
         if (!visible[g][k]) continue;
         let { x: $, y: T } = worldToScreen(o.x, o.y), S = zoom;
+        let rMargin = 30 * S;
+        if ($ + rMargin < 0 || $ - rMargin > window.innerWidth || T + rMargin < 0 || T - rMargin > window.innerHeight) continue;
         if (ctx.save(), ctx.translate($, T), o.type === "wood") ctx.fillStyle = "#5a3a1a", ctx.fillRect(-2 * S, -2 * S, 4 * S, 10 * S), ctx.fillStyle = "#3a6a2a", ctx.beginPath(), ctx.moveTo(0, -18 * S), ctx.lineTo(-10 * S, -4 * S), ctx.lineTo(10 * S, -4 * S), ctx.closePath(), ctx.fill(), ctx.fillStyle = "#2f5a23", ctx.beginPath(), ctx.moveTo(0, -22 * S), ctx.lineTo(-7 * S, -8 * S), ctx.lineTo(7 * S, -8 * S), ctx.closePath(), ctx.fill();
         else if (o.type === "food") {
           ctx.fillStyle = "#7ab74a", ctx.beginPath(), ctx.arc(0, -2 * S, 8 * S, 0, Math.PI * 2), ctx.fill(), ctx.fillStyle = "#c43a3a";
@@ -589,10 +597,36 @@ function GameScreen({ config, onExit }) {
       if (hit) {
         if (mine && mine.type !== "villager" && !isFriendly(hit.ownerId)) {
           mine.attackTarget = hit.id, mine.state = "move", mine.tx = hit.x, mine.ty = hit.y;
-        } else selectedId = hit.id;
+          if (groupSelectedIds.length > 1) {
+            units.forEach((u) => {
+              if (groupSelectedIds.includes(u.id) && u.id !== mine.id) {
+                u.attackTarget = hit.id, u.state = "move", u.tx = hit.x, u.ty = hit.y;
+              }
+            });
+          }
+        } else {
+          let now = Date.now();
+          if (hit.id === lastTappedId && (now - lastTapTime) < 400 && isFriendly(hit.ownerId) && !BUILDINGS[hit.type]) {
+            let same = units.filter((u) => u.ownerId === "player" && u.type === hit.type);
+            groupSelectedIds = same.map((u) => u.id);
+          } else {
+            groupSelectedIds = [hit.id];
+          }
+          selectedId = hit.id, lastTappedId = hit.id, lastTapTime = now;
+        }
       } else if (mine) {
         // 3. Sentuh tanah kosong: hanya unit milik pemain yang boleh diperintah.
         mine.tx = world.x, mine.ty = world.y, mine.state = "move", mine.attackTarget = void 0;
+        if (groupSelectedIds.length > 1) {
+          units.forEach((u, idx) => {
+            if (groupSelectedIds.includes(u.id) && u.id !== mine.id) {
+              let angle = idx * (Math.PI * 2 / groupSelectedIds.length);
+              u.tx = world.x + Math.cos(angle) * 0.8, u.ty = world.y + Math.sin(angle) * 0.8, u.state = "move", u.attackTarget = void 0;
+            }
+          });
+        }
+      } else {
+        selectedId = null, groupSelectedIds = [];
       }
     };
     return canvas.addEventListener("touchstart", (d) => {
@@ -682,6 +716,10 @@ function GameScreen({ config, onExit }) {
         if (g < h) h = g, _ = o;
       }
       if (_) y.gatherTarget = _.id, y.gatherType = _.type, y.carryType = _.type, y.state = "gather", y.tx = _.x, y.ty = _.y;
+    }, jumpToWorld: (wx, wy) => {
+      let screenPos = worldToScreen(wx, wy);
+      camX += window.innerWidth / 2 - screenPos.x;
+      camY += window.innerHeight / 2 - screenPos.y;
     } }, requestAnimationFrame(gameLoop), () => {
       alive = false;
       window.removeEventListener("resize", resizeCanvas);
