@@ -233,7 +233,7 @@ function GameScreen({ config, onExit }) {
           if (o.state === "gather" && o.gatherTarget !== void 0) {
             let k = resources.find(($) => $.id === o.gatherTarget);
             if (!k || k.amount <= 0) o.state = "idle", o.gatherTarget = void 0;
-            else if (Math.hypot(k.x - o.x, k.y - o.y) > 1.2) o.tx = k.x, o.ty = k.y;
+            else if (o.carry < o.carryMax && Math.hypot(k.x - o.x, k.y - o.y) > 1.2) o.tx = k.x, o.ty = k.y;
             else if (o.carry < o.carryMax) {
               let T = 14 * y * (o.nationId === "french" && o.gatherType === "food" ? 1.15 : 1), S = Math.min(T, k.amount, o.carryMax - o.carry);
               if (o.carry += S, k.amount -= S, Math.random() < 0.15) particles.push({ x: k.x, y: k.y, vx: (Math.random() - 0.5) * 1, vy: -Math.random() * 2, life: 0.4, maxLife: 0.4, color: k.type === "wood" ? "#8a5a2a" : k.type === "food" ? "#7ac74a" : "#d4c36a", size: 2 });
