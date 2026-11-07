@@ -14,7 +14,7 @@ function GameScreen({ config, onExit }) {
       let _ = `opp_${y}`, h = d.difficulty === "Easy" ? 0.7 : d.difficulty === "Hard" ? 1.4 : d.difficulty === "Expert" ? 1.8 : 1;
       if (economy[_] = { wood: Math.floor(400 * h), food: Math.floor(400 * h), coin: Math.floor(400 * h), pop: 0, popCap: 20 }, d.def.id === "spanish") economy[_].coin += 100;
     });
-    let selectedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
+    let alive = true, ottomanTimer = 0, dutchTimer = 0, selectedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
     // ===== KOORDINAT ISOMETRIK: dunia (tile) <-> layar (px), memakai camX/camY/zoom =====
     function worldToScreen(d, y) {
       let _ = (d - y) * TILE_W / 2, h = (d + y) * TILE_H / 2;
