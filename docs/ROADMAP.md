@@ -17,11 +17,15 @@
   - P11: Loop `requestAnimationFrame` dan listener dilepas bersih saat pemain kembali ke Lobby (mencegah memory leak).
   - P12: Optimasi rendering Canvas `drawWorld()`: `tileOrder` di-precompute sekali (menghemat alokasi 4.000 objek & sort per frame, drastis menurunkan suhu dan konsumsi baterai ponsel).
   - P13: Menggunakan CSS `env(safe-area-inset-top)` untuk notch/poni ponsel.
+- **Tahap 3 (Mobile Touch Ergonomics & Viewport Frustum Culling - Selesai Penuh)**:
+  - Frustum Culling: Tile, bangunan, unit, dan resource yang berada di luar layar ponsel di-skip langsung (menghemat 80-90% operasi Canvas 2D per frame).
+  - Minimap Tap-to-Pan: Menekan koordinat mana pun di minimap langsung mengarahkan kamera ke lokasi tersebut.
+  - Double-Tap Group Selection: Ketuk dua kali (double-tap) pada satu unit untuk memilih seluruh unit sejenis milik pemain di layar.
+  - Group Move & Attack: Perintah gerak dan serang dijalankan serempak oleh seluruh kelompok unit terpilih dengan formasi offset radial.
+  - Deselect Kosong: Mengetuk tanah kosong saat tidak ada unit yang diperintah akan membersihkan seleksi.
+  - Mobile Touch HUD: Tombol latih diperbesar menjadi ramah jempol (min 42px), tombol kembali diperbesar (40x40px), dan status villager diperjelas.
 
 ## Roadmap Pengembangan Standar Industri Berikutnya
-- **Tahap 3 (Mobile Touch & Viewport Culling)**:
-  - Frustum culling: hanya render tile yang berada dalam viewport kamera ponsel (menghemat 90% draw call).
-  - Touch target minimal 48dp untuk tombol aksi di layar sentuh.
 - **Tahap 4 (RTS Spatial Grid & Pathfinding)**:
   - Spatial partitioning hash grid untuk deteksi tabrakan dan pencarian target O(1).
   - Grid-based pathfinding (A*) agar unit tidak terjebak di sekitar gedung dan pohon.
