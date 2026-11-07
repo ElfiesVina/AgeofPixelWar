@@ -219,6 +219,77 @@ function GameScreen({ config, onExit }) {
         }
       }
     }
+    // ===== SKIRMISH AI: Ekonomi mandiri, bangun markas, latih pasukan, dan serbu =====
+    let aiDecisionTimer = 0;
+    function updateSkirmishAI(delta) {
+      aiDecisionTimer += delta;
+      if (aiDecisionTimer < 3) return; // Jalankan evaluasi taktis AI tiap 3 detik
+      aiDecisionTimer = 0;
+      opponents.forEach((opp, idx) => {
+        let oppOwner = `opp_${idx}`;
+        let eco = economy[oppOwner];
+        if (!eco) return;
+        let myBuildings = buildings.filter(b => b.ownerId === oppOwner);
+        let myUnits = units.filter(u => u.ownerId === oppOwner);
+        let myTC = myBuildings.find(b => b.type === "townCenter");
+        if (!myTC) return;
+        // 1. AI Pekerjakan Villager yang menganggur
+        myUnits.filter(u => u.type === "villager" && u.state === "idle").forEach(v => {
+          let nearestRes = resources.find(r => r.amount > 0 && Math.hypot(r.x - v.x, r.y - v.y) < 14);
+          if (nearestRes) {
+            v.gatherTarget = nearestRes.id; v.gatherType = nearestRes.type; v.carryType = nearestRes.type;
+            v.state = "gather"; v.tx = nearestRes.x; v.ty = nearestRes.y;
+          }
+        });
+        // 2. AI Latih Villager di Town Center (target 8 villager)
+        let vCount = myUnits.filter(u => u.type === "villager").length;
+        if (vCount < 8 && eco.food >= 60 && eco.pop < eco.popCap && (!myTC.queue || myTC.queue.length === 0)) {
+          eco.food -= 60;
+          myTC.queue = myTC.queue || [];
+          myTC.queue.push("villager");
+          myTC.queueTime = 5;
+        }
+        // 3. AI Bangun Rumah jika populasi hampir penuh
+        if (eco.pop >= eco.popCap - 2 && eco.wood >= 100) {
+          let rx = myTC.x + (Math.random() > 0.5 ? 4 : -4);
+          let ry = myTC.y + (Math.random() > 0.5 ? 4 : -4);
+          if (placeBuilding(BUILDINGS.house, rx, ry, oppOwner, opp.def.id)) {
+            eco.wood -= 100;
+          }
+        }
+        // 4. AI Bangun Barracks jika belum punya
+        let hasBarracks = myBuildings.some(b => b.type === "barracks");
+        if (!hasBarracks && eco.wood >= 150) {
+          let bx = myTC.x + 3, by = myTC.y - 2;
+          if (placeBuilding(BUILDINGS.barracks, bx, by, oppOwner, opp.def.id)) {
+            eco.wood -= 150;
+          }
+        }
+        // 5. AI Latih Militer di Barak
+        let barracksList = myBuildings.filter(b => b.type === "barracks" && b.buildProgress >= 1);
+        barracksList.forEach(barrack => {
+          if ((!barrack.queue || barrack.queue.length < 2) && eco.food >= 65 && eco.coin >= 45 && eco.pop < eco.popCap) {
+            eco.food -= 65; eco.coin -= 45;
+            barrack.queue = barrack.queue || [];
+            barrack.queue.push(opp.def.uniqueUnit === "janissary" ? "janissary" : "musketeer");
+            barrack.queueTime = 7;
+          }
+        });
+        // 6. AI Pimpin Serangan jika pasukan militer >= 5
+        let army = myUnits.filter(u => u.type !== "villager" && u.state === "idle");
+        if (army.length >= 5) {
+          let targetPlayerTC = buildings.find(b => b.type === "townCenter" && b.ownerId === "player");
+          if (targetPlayerTC) {
+            army.forEach((soldier, sIdx) => {
+              soldier.attackTarget = targetPlayerTC.id;
+              soldier.state = "move";
+              soldier.tx = targetPlayerTC.x + (sIdx % 3) * 0.8;
+              soldier.ty = targetPlayerTC.y + Math.floor(sIdx / 3) * 0.8;
+            });
+          }
+        }
+      });
+    }
     // ===== GAME LOOP: wave musuh, konstruksi, antrean latih, tower, AI unit, gathering, gerak, proyektil, partikel, sync HUD =====
     let lastFrameTime = performance.now(), hudAccumulator = 0, gameLoop = (d) => {
       if (!alive) return;
@@ -229,6 +300,7 @@ function GameScreen({ config, onExit }) {
       }
       let y = Math.min(0.05, (d - lastFrameTime) / 1e3);
       lastFrameTime = d, gameTime += y, hudAccumulator += y;
+      updateSkirmishAI(y);
       let _ = 400 * y / zoom;
       if (keys.w || keys.ArrowUp) camY += _;
       if (keys.s || keys.ArrowDown) camY -= _;
