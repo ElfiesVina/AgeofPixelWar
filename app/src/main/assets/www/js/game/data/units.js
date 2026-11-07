@@ -1,3 +1,6 @@
 "use strict";
 /* Definisi unit: biaya, HP, damage, range, speed, waktu latih, sight. */
-var UNITS = { villager: { id: "villager", name: "Settler", cost: { wood: 0, food: 60, coin: 0 }, hp: 75, dmg: 5, range: 1, speed: 2.2, trainTime: 5, sight: 5 }, musketeer: { id: "musketeer", name: "Musketeer", cost: { wood: 0, food: 65, coin: 45 }, hp: 110, dmg: 18, range: 5.5, speed: 1.8, trainTime: 7, sight: 7 }, hussar: { id: "hussar", name: "Hussar", cost: { wood: 0, food: 80, coin: 65 }, hp: 155, dmg: 24, range: 1.2, speed: 3.2, trainTime: 9, sight: 6 }, cannon: { id: "cannon", name: "Falconet", cost: { wood: 100, food: 0, coin: 160 }, hp: 190, dmg: 55, range: 7, speed: 1.2, trainTime: 14, sight: 8 }, longbow: { id: "longbow", name: "Longbow", cost: { wood: 40, food: 40, coin: 0 }, hp: 90, dmg: 16, range: 6.5, speed: 1.9, trainTime: 6, sight: 7 }, janissary: { id: "janissary", name: "Janissary", cost: { wood: 0, food: 70, coin: 50 }, hp: 125, dmg: 22, range: 5, speed: 1.7, trainTime: 6, sight: 6 } };
+var UNITS = {
+    captain: { id: "captain", name: "Captain", cost: { wood: 0, food: 0, coin: 0 }, hp: 350, dmg: 28, range: 1.2, speed: 2.4, trainTime: 0, sight: 9 },
+    villager: { id: "villager", name: "Settler", cost: { wood: 0, food: 60, coin: 0 }, hp: 75, dmg: 5, range: 1, speed: 2.2, trainTime: 5, sight: 5 }
+};

@@ -14,7 +14,7 @@ function GameScreen({ config, onExit }) {
       let _ = `opp_${y}`, h = d.difficulty === "Easy" ? 0.7 : d.difficulty === "Hard" ? 1.4 : d.difficulty === "Expert" ? 1.8 : 1;
       if (economy[_] = { wood: Math.floor(400 * h), food: Math.floor(400 * h), coin: Math.floor(400 * h), pop: 0, popCap: 20 }, d.def.id === "spanish") economy[_].coin += 100;
     });
-    let alive = true, ottomanTimer = 0, dutchTimer = 0, selectedId = null, groupSelectedIds = [], lastTapTime = 0, lastTappedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
+    let alive = true, playerAge = 1, captainReviveTimer = 0, ottomanTimer = 0, dutchTimer = 0, selectedId = null, groupSelectedIds = [], lastTapTime = 0, lastTappedId = null, buildMode = null, ghostX = 0, ghostY = 0, ghostValid = true, camX = 0, camY = 0, zoom = 1, isPanning = false, panStart = { x: 0, y: 0, camX: 0, camY: 0 }, keys = {}, pointerScreen = { x: 0, y: 0 }, pointerWorld = { x: 0, y: 0 }, waveNumber = 1, waveTimer = 90, gameOver = null, gameTime = 0;
     // ===== KOORDINAT ISOMETRIK: dunia (tile) <-> layar (px), memakai camX/camY/zoom =====
     function worldToScreen(d, y) {
       let _ = (d - y) * TILE_W / 2, h = (d + y) * TILE_H / 2;
@@ -168,11 +168,11 @@ function GameScreen({ config, onExit }) {
       if (S) S.hp = S.maxHp;
       let D = placeBuilding(BUILDINGS.barracks, k + 3, $ - 1, `opp_${y}`, d.def.id);
       if (D) D.hp = D.maxHp;
-    }), spawnUnit("villager", 5, 5, "player", myNation.id), spawnUnit("villager", 6, 5, "player", myNation.id), spawnUnit("villager", 5, 6, "player", myNation.id), spawnUnit(myNation.uniqueUnit === "longbow" ? "longbow" : "musketeer", 6, 6, "player", myNation.id), opponents.forEach((d, y) => {
+    }), spawnUnit("captain", 4, 4, "player", myNation.id), spawnUnit("villager", 5, 5, "player", myNation.id), spawnUnit("villager", 6, 5, "player", myNation.id), spawnUnit("villager", 5, 6, "player", myNation.id), spawnUnit("musketeer", 6, 6, "player", myNation.id), spawnUnit("musketeer", 6, 7, "player", myNation.id), spawnUnit("musketeer", 7, 6, "player", myNation.id), opponents.forEach((d, y) => {
       let _ = enemyTCs[y];
       if (!_) return;
-      spawnUnit("villager", _.x + 1, _.y + 1, `opp_${y}`, d.def.id), spawnUnit("villager", _.x + 2, _.y + 1, `opp_${y}`, d.def.id), spawnUnit(d.def.uniqueUnit === "janissary" ? "janissary" : d.def.uniqueUnit === "cannon" ? "cannon" : "musketeer", _.x + 1, _.y + 2, `opp_${y}`, d.def.id);
-    }), placeBuilding(BUILDINGS.house, 2, 6, "player", myNation.id).hp = 300, placeBuilding(BUILDINGS.barracks, 7, 2, "player", myNation.id).hp = BUILDINGS.barracks.hp, placeBuilding(BUILDINGS.tower, 5, 8, "player", myNation.id).hp = BUILDINGS.tower.hp;
+      spawnUnit("captain", _.x, _.y + 1, `opp_${y}`, d.def.id), spawnUnit("villager", _.x + 1, _.y + 1, `opp_${y}`, d.def.id), spawnUnit("villager", _.x + 2, _.y + 1, `opp_${y}`, d.def.id), spawnUnit("villager", _.x + 1, _.y + 2, `opp_${y}`, d.def.id), spawnUnit("musketeer", _.x + 2, _.y + 2, `opp_${y}`, d.def.id), spawnUnit("musketeer", _.x + 3, _.y + 2, `opp_${y}`, d.def.id), spawnUnit(d.def.uniqueUnit === "janissary" ? "janissary" : "musketeer", _.x + 2, _.y + 3, `opp_${y}`, d.def.id);
+    }), placeBuilding(BUILDINGS.house, 2, 6, "player", myNation.id).hp = 300;
     spawnResources("wood", Math.floor(40 + mapSize * 1.2), 600), spawnResources("food", Math.floor(15 + mapSize * 0.6), 500), spawnResources("coin", Math.floor(12 + mapSize * 0.5), 700);
     let startScreenPos = worldToScreen(5, 5);
     camX = window.innerWidth / 2 - startScreenPos.x + window.innerWidth * 0.15, camY = window.innerHeight / 2 - startScreenPos.y;
@@ -389,6 +389,18 @@ function GameScreen({ config, onExit }) {
       if ((dutchTimer += y) >= 2 && (dutchTimer -= 2, true)) Object.entries(economy).forEach(([h, o]) => {
         if ((h === "player" ? myNation.id : getNation(config.opponents[parseInt(h.split("_")[1])]?.nationId || "british").id) === "dutch") o.coin += 2;
       });
+      // Revive Kapten jika gugur
+      let hasCaptain = units.some(u => u.type === "captain" && u.ownerId === "player");
+      if (!hasCaptain) {
+        captainReviveTimer += y;
+        if (captainReviveTimer >= 60) {
+          let tc = buildings.find(b => b.type === "townCenter" && b.ownerId === "player");
+          if (tc) spawnUnit("captain", tc.x + 1.5, tc.y + 1.5, "player", myNation.id);
+          captainReviveTimer = 0;
+        }
+      } else {
+        captainReviveTimer = 0;
+      }
       for (let h = projectiles.length - 1; h >= 0; h--) {
         let o = projectiles[h], g = o.tx - o.x, k = o.ty - o.y, $ = Math.hypot(g, k);
         if ($ < 0.3 || o.life > 2.5) {
@@ -508,6 +520,10 @@ function GameScreen({ config, onExit }) {
       if (d.type === "longbow") ctx.fillStyle = "#2a5a2a", ctx.fillRect(S + 1 * w, D - 2 * w, 5 * w, 2 * w), ctx.fillStyle = T, ctx.fillRect(S + 2 * w, D + 3 * w, 3 * w, 5 * w), ctx.fillStyle = "#8b5a2b", ctx.fillRect(S + 6 * w, D + 1 * w, 5 * w, 1 * w);
       if (d.type === "hussar") ctx.fillStyle = "#8a3a2a", ctx.fillRect(S, D - 1 * w, 7 * w, 2 * w), ctx.fillStyle = "#d4a24e", ctx.fillRect(S + 1 * w, D + 3 * w, 5 * w, 6 * w), ctx.fillStyle = "#4a2a1a", ctx.fillRect(S - 1 * w, D + 7 * w, 2 * w, 3 * w), ctx.fillRect(S + 5 * w, D + 7 * w, 2 * w, 3 * w);
       if (d.type === "cannon") ctx.fillStyle = "#6a6a6a", ctx.fillRect(S - 2 * w, D + 2 * w, 9 * w, 5 * w), ctx.fillStyle = "#2a2a2a", ctx.fillRect(S + 6 * w, D + 3 * w, 8 * w, 2 * w);
+      if (d.type === "captain") {
+        ctx.fillStyle = "#FFD700", ctx.beginPath(), ctx.arc(0, 4 * k, 7 * k, 0, Math.PI * 2), ctx.fill();
+        ctx.fillStyle = "#1a1a2a", ctx.fillRect(S + 1 * w, D - 3 * w, 5 * w, 3 * w), ctx.fillStyle = "#d4af37", ctx.fillRect(S + 2 * w, D + 3 * w, 3 * w, 5 * w);
+      }
       if (d.carry > 0) ctx.fillStyle = d.carryType === "wood" ? "#8b5a2b" : d.carryType === "food" ? "#7ac74a" : "#d4c36a", ctx.fillRect(S + 6 * w, D + 4 * w, 2 * w, 2 * w);
       if ((d.hp < d.maxHp || d.id === selectedId) && visible[y][_]) {
         let ne = 16 * k;
