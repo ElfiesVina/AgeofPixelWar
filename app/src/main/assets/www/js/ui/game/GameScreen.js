@@ -80,7 +80,7 @@ function GameScreen({ config, onExit }) {
         resources.push({ id: nextId++, type: d, x: o + 0.5, y: g + 0.5, amount: _ });
       }
     };
-    spawnResources("wood", Math.floor(40 + mapSize * 1.2), 600), spawnResources("food", Math.floor(15 + mapSize * 0.6), 500), spawnResources("coin", Math.floor(12 + mapSize * 0.5), 700);
+    // Initial buildings placed before resources
     let playerTC = placeBuilding(BUILDINGS.townCenter, 2, 2, "player", myNation.id);
     playerTC.hp = playerTC.maxHp, playerTC.buildProgress = 1;
     let enemyTCs = [];
@@ -96,6 +96,7 @@ function GameScreen({ config, onExit }) {
       if (!_) return;
       spawnUnit("villager", _.x + 1, _.y + 1, `opp_${y}`, d.def.id), spawnUnit("villager", _.x + 2, _.y + 1, `opp_${y}`, d.def.id), spawnUnit(d.def.uniqueUnit === "janissary" ? "janissary" : d.def.uniqueUnit === "cannon" ? "cannon" : "musketeer", _.x + 1, _.y + 2, `opp_${y}`, d.def.id);
     }), placeBuilding(BUILDINGS.house, 2, 6, "player", myNation.id).hp = 300, placeBuilding(BUILDINGS.barracks, 7, 2, "player", myNation.id).hp = BUILDINGS.barracks.hp, placeBuilding(BUILDINGS.tower, 5, 8, "player", myNation.id).hp = BUILDINGS.tower.hp;
+    spawnResources("wood", Math.floor(40 + mapSize * 1.2), 600), spawnResources("food", Math.floor(15 + mapSize * 0.6), 500), spawnResources("coin", Math.floor(12 + mapSize * 0.5), 700);
     let startScreenPos = worldToScreen(5, 5);
     camX = window.innerWidth / 2 - startScreenPos.x + window.innerWidth * 0.15, camY = window.innerHeight / 2 - startScreenPos.y;
     // ===== EKONOMI: cek/bayar biaya, cari tempat setor resource =====
@@ -143,6 +144,7 @@ function GameScreen({ config, onExit }) {
     }
     // ===== GAME LOOP: wave musuh, konstruksi, antrean latih, tower, AI unit, gathering, gerak, proyektil, partikel, sync HUD =====
     let lastFrameTime = performance.now(), hudAccumulator = 0, gameLoop = (d) => {
+      if (!alive) return;
       if (gameOver) {
         setHud((g) => (g.gameOver === gameOver ? g : { ...g, gameOver: gameOver }));
         drawWorld(), requestAnimationFrame(gameLoop);
@@ -171,7 +173,7 @@ function GameScreen({ config, onExit }) {
       });
       for (let h of buildings) {
         if (h.buildProgress !== void 0 && h.buildProgress < 1) {
-          if (h.buildProgress += y * 0.25, h.buildProgress >= 1) h.buildProgress = 1, h.hp = h.maxHp, h.isBuilding = false;
+          if (h.buildProgress += y * 0.25, h.buildProgress >= 1) h.buildProgress = 1, h.hp = h.maxHp;
         }
         if (h.queue && h.queue.length > 0) {
           if (h.queueTime -= y, h.queueTime <= 0) {
@@ -298,11 +300,11 @@ function GameScreen({ config, onExit }) {
           }
         }
       }
-      if (gameTime % 40 < 0.05) [...buildings].filter((h) => getNation(h.nationId).id === "ottomans" && h.type === "townCenter").forEach((h) => {
+      if ((ottomanTimer += y) >= 40 && (ottomanTimer -= 40, true)) [...buildings].filter((h) => getNation(h.nationId).id === "ottomans" && h.type === "townCenter").forEach((h) => {
         let o = economy[h.ownerId];
         if (o && o.pop < o.popCap) spawnUnit("villager", h.x + 1, h.y + 1, h.ownerId, h.nationId);
       });
-      if (Math.floor(gameTime) % 2 === 0 && gameTime % 1 < 0.05) Object.entries(economy).forEach(([h, o]) => {
+      if ((dutchTimer += y) >= 2 && (dutchTimer -= 2, true)) Object.entries(economy).forEach(([h, o]) => {
         if ((h === "player" ? myNation.id : getNation(config.opponents[parseInt(h.split("_")[1])]?.nationId || "british").id) === "dutch") o.coin += 2;
       });
       for (let h = projectiles.length - 1; h >= 0; h--) {
@@ -349,7 +351,10 @@ function GameScreen({ config, onExit }) {
           let o = Math.floor(pointerWorld.x), g = Math.floor(pointerWorld.y);
           if (ghostX = o, ghostY = g, o < 0 || g < 0 || o + h.w > mapSize || g + h.h > mapSize) ghostValid = false;
           else for (let k = 0; k < h.w; k++) for (let $ = 0; $ < h.h; $++) if (occupied[o + k]?.[g + $]) ghostValid = false;
-          if (!canAfford(h.cost)) ghostValid = false;
+          let cost = { ...h.cost };
+          if (h.id === "house" && myNation.id === "british") cost.wood = Math.floor(cost.wood * 0.75);
+          if (h.id === "barracks" && myNation.id === "spanish") cost.wood = Math.floor(cost.wood * 0.8);
+          if (!canAfford(cost)) ghostValid = false;
         }
       }
       if (hudAccumulator > 0.15) {
@@ -423,11 +428,16 @@ function GameScreen({ config, onExit }) {
       if (d.id === selectedId) ctx.strokeStyle = "#fff", ctx.lineWidth = 1.2, ctx.beginPath(), ctx.arc(0, 0, 12 * k, 0, Math.PI * 2), ctx.stroke();
       ctx.restore();
     }
+    const tileOrder = (() => {
+      let a = [];
+      for (let o = 0; o < mapSize; o++) for (let g = 0; g < mapSize; g++) a.push({ x: o, y: g });
+      return a.sort((o, g) => o.x + o.y - (g.x + g.y));
+    })();
     function drawWorld() {
       ctx.fillStyle = "#1a2a1a", ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-      let d = (Math.sin(gameTime * 0.03) + 1) / 2, y = [];
-      for (let o = 0; o < mapSize; o++) for (let g = 0; g < mapSize; g++) y.push({ x: o, y: g });
-      y.sort((o, g) => o.x + o.y - (g.x + g.y));
+      let d = (Math.sin(gameTime * 0.03) + 1) / 2, y = tileOrder;
+
+
       for (let o of y) drawTile(o.x, o.y, tileVariants[o.x][o.y]);
       for (let o of resources) {
         let g = Math.floor(o.x), k = Math.floor(o.y);
@@ -623,6 +633,7 @@ function GameScreen({ config, onExit }) {
         if (ghostValid) {
           let building = BUILDINGS[buildMode], cost = { ...building.cost };
           if (building.id === "house" && myNation.id === "british") cost.wood = Math.floor(cost.wood * 0.75);
+          if (building.id === "barracks" && myNation.id === "spanish") cost.wood = Math.floor(cost.wood * 0.8);
           if (canAfford(cost, "player")) spendResources(cost, "player"), placeBuilding(building, ghostX, ghostY, "player", myNation.id), buildMode = null, setHud((h) => ({ ...h, buildMode: null }));
         }
         touchGesture = null;
@@ -648,7 +659,7 @@ function GameScreen({ config, onExit }) {
       }
       buildMode = d, setHud((y) => ({ ...y, buildMode: d }));
     }, train: (d) => {
-      let y = [...buildings].find((g) => g.id === selectedId);
+      let y = [...buildings].find((g) => g.id === selectedId && g.ownerId === "player");
       if (!y) return;
       let _ = UNITS[d];
       if (!_) return;
@@ -658,7 +669,7 @@ function GameScreen({ config, onExit }) {
       if (y.nationId === "russians" && d !== "villager" && d !== "cannon") o.food = Math.floor(o.food * 0.7);
       if (y.nationId === "germans" && (d === "cannon" || d === "hussar")) o.coin = Math.floor(o.coin * 0.8);
       if (!canAfford(o, y.ownerId)) return;
-      if (h.pop >= h.popCap) return;
+      if (h.pop + buildings.reduce((n, b) => n + (b.ownerId === y.ownerId && b.queue ? b.queue.length : 0), 0) >= h.popCap) return;
       if (spendResources(o, y.ownerId), y.queue = y.queue || [], y.queue.push(d), y.queue.length === 1) y.queueTime = _.trainTime;
     }, cancelBuild: () => {
       buildMode = null, setHud((d) => ({ ...d, buildMode: null }));
@@ -672,6 +683,7 @@ function GameScreen({ config, onExit }) {
       }
       if (_) y.gatherTarget = _.id, y.gatherType = _.type, y.carryType = _.type, y.state = "gather", y.tx = _.x, y.ty = _.y;
     } }, requestAnimationFrame(gameLoop), () => {
+      alive = false;
       window.removeEventListener("resize", resizeCanvas);
     };
   }, [mapSize, config]);
