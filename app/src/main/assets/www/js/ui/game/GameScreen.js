@@ -233,14 +233,14 @@ function GameScreen({ config, onExit }) {
           if (o.state === "gather" && o.gatherTarget !== void 0) {
             let k = resources.find(($) => $.id === o.gatherTarget);
             if (!k || k.amount <= 0) o.state = "idle", o.gatherTarget = void 0;
-            else if (Math.hypot(k.x - o.x, k.y - o.y) > 1.2) o.tx = k.x, o.ty = k.y, o.state = "move";
+            else if (Math.hypot(k.x - o.x, k.y - o.y) > 1.2) o.tx = k.x, o.ty = k.y;
             else if (o.carry < o.carryMax) {
               let T = 14 * y * (o.nationId === "french" && o.gatherType === "food" ? 1.15 : 1), S = Math.min(T, k.amount, o.carryMax - o.carry);
               if (o.carry += S, k.amount -= S, Math.random() < 0.15) particles.push({ x: k.x, y: k.y, vx: (Math.random() - 0.5) * 1, vy: -Math.random() * 2, life: 0.4, maxLife: 0.4, color: k.type === "wood" ? "#8a5a2a" : k.type === "food" ? "#7ac74a" : "#d4c36a", size: 2 });
               if (k.amount <= 0) resources.splice(resources.indexOf(k), 1);
             } else {
               let T = findDropoff(o.x, o.y, o.carryType, o.ownerId);
-              if (T) o.tx = T.x, o.ty = T.y, o.state = "move";
+              if (T) o.tx = T.x, o.ty = T.y;
               if (T && Math.hypot(T.x - o.x, T.y - o.y) < 2.5) {
                 let S = economy[o.ownerId];
                 if (S) {
@@ -249,7 +249,7 @@ function GameScreen({ config, onExit }) {
                   if (o.carryType === "coin") S.coin += Math.floor(o.carry);
                 }
                 o.carry = 0, o.carryType = void 0;
-                let D = resources.find((w) => w.type === o.gatherType && Math.hypot(w.x - o.x, w.y - o.y) < 12);
+                let D = resources.find((w) => w.id === o.gatherTarget && w.amount > 0) || resources.find((w) => w.type === o.gatherType && Math.hypot(w.x - o.x, w.y - o.y) < 12);
                 if (D) o.gatherTarget = D.id, o.gatherType = D.type, o.carryType = D.type, o.state = "gather";
               }
             }
