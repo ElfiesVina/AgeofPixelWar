@@ -127,7 +127,8 @@ function GameScreen({ config, onExit }) {
     }
     // ===== GAME LOOP: wave musuh, konstruksi, antrean latih, tower, AI unit, gathering, gerak, proyektil, partikel, sync HUD =====
     let lastFrameTime = performance.now(), hudAccumulator = 0, gameLoop = (d) => {
-      if (gameOver) {
+            if (gameOver) {
+        setHud((g) => (g.gameOver === gameOver ? g : { ...g, gameOver: gameOver }));
         drawWorld(), requestAnimationFrame(gameLoop);
         return;
       }
@@ -144,11 +145,11 @@ function GameScreen({ config, onExit }) {
         if (!g) return;
         let k = h.difficulty === "Easy" ? 1 : h.difficulty === "Expert" ? 4 : h.difficulty === "Hard" ? 3 : 2;
         for (let $ = 0; $ < k; $++) {
-          let T = Math.random(), S = h.def.uniqueUnit;
+          let T = Math.random(), S = getNation(h.nationId).uniqueUnit;
           if (S === "longbow" || S === "janissary") ;
           else if (T > 0.6) S = "hussar";
-          if (h.def.id === "germans" && Math.random() > 0.7) S = "cannon";
-          let D = spawnUnit(S, g.x + Math.random() * 2, g.y + Math.random() * 2, `opp_${o}`, h.def.id);
+          if (getNation(h.nationId).id === "germans" && Math.random() > 0.7) S = "cannon";
+          let D = spawnUnit(S, g.x + Math.random() * 2, g.y + Math.random() * 2, `opp_${o}`, getNation(h.nationId).id);
           D.tx = playerTC.x + (Math.random() - 0.5) * 3, D.ty = playerTC.y + (Math.random() - 0.5) * 3, D.state = "move";
         }
       });
