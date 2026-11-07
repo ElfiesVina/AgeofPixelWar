@@ -540,24 +540,32 @@ function GameScreen({ config, onExit }) {
       camX = h - window.innerWidth / 2 - (h - window.innerWidth / 2 - camX) * (zoom / _), camY = o - window.innerHeight / 2 - (o - window.innerHeight / 2 - camY) * (zoom / _);
     }, { passive: false });
     let pinchDistance = 0, touchGesture = null;
-    const finishTouchTap = (touch) => {
-      let world = screenToWorld(touch.clientX, touch.clientY), hit = null, nearest = 2.5;
+        const finishTouchTap = (touch) => {
+      let world = screenToWorld(touch.clientX, touch.clientY);
+      let mine = units.find((unit) => unit.id === selectedId && unit.ownerId === "player");
+      // 1. Villager terpilih + sentuh pohon/tambang/makanan: langsung bekerja di sana.
+      if (mine && mine.type === "villager") {
+        let res = resources.find((r) => Math.hypot(r.x - world.x, r.y - world.y) < 1.2 && visible[Math.floor(r.x)]?.[Math.floor(r.y)]);
+        if (res) {
+          mine.gatherTarget = res.id, mine.gatherType = res.type, mine.carryType = res.type, mine.state = "gather", mine.tx = res.x, mine.ty = res.y;
+          return;
+        }
+      }
+      // 2. Cari unit/bangunan yang disentuh (radius kecil: unit 0.9 petak, bangunan 1.8 petak).
+      let hit = null, nearest = 99;
       for (let entity of [...buildings, ...units]) {
         let x = Math.floor(entity.x), y = Math.floor(entity.y);
         if (!explored[x]?.[y] || (!isFriendly(entity.ownerId) && !visible[x]?.[y])) continue;
-        let distance = Math.hypot(entity.x - world.x, entity.y - world.y);
-        if (distance < nearest) nearest = distance, hit = entity;
+        let distance = Math.hypot(entity.x - world.x, entity.y - world.y), limit = BUILDINGS[entity.type] ? 1.8 : 0.9;
+        if (distance < limit && distance < nearest) nearest = distance, hit = entity;
       }
       if (hit) {
-        if (selectedId && selectedId !== hit.id && !isFriendly(hit.ownerId)) {
-          let selectedUnit = units.find((unit) => unit.id === selectedId);
-          if (selectedUnit && selectedUnit.type !== "villager") {
-            selectedUnit.attackTarget = hit.id, selectedUnit.state = "move", selectedUnit.tx = hit.x, selectedUnit.ty = hit.y;
-          } else selectedId = hit.id;
+        if (mine && mine.type !== "villager" && !isFriendly(hit.ownerId)) {
+          mine.attackTarget = hit.id, mine.state = "move", mine.tx = hit.x, mine.ty = hit.y;
         } else selectedId = hit.id;
-      } else {
-        let selectedUnit = units.find((unit) => unit.id === selectedId);
-        if (selectedUnit) selectedUnit.tx = world.x, selectedUnit.ty = world.y, selectedUnit.state = "move", selectedUnit.attackTarget = void 0;
+      } else if (mine) {
+        // 3. Sentuh tanah kosong: hanya unit milik pemain yang boleh diperintah.
+        mine.tx = world.x, mine.ty = world.y, mine.state = "move", mine.attackTarget = void 0;
       }
     };
     return canvas.addEventListener("touchstart", (d) => {
@@ -593,6 +601,7 @@ function GameScreen({ config, onExit }) {
         pinchDistance = distance;
       }
     }, { passive: false }), canvas.addEventListener("touchend", (d) => {
+      d.cancelable && d.preventDefault();
       if (d.touches.length === 0 && buildMode) {
         if (ghostValid) {
           let building = BUILDINGS[buildMode], cost = { ...building.cost };
