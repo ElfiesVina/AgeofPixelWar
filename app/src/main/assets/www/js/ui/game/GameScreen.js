@@ -54,6 +54,22 @@ function GameScreen({ config, onExit }) {
       if (units.push(S), economy[h]) economy[h].pop++;
       return S;
     }
+
+    // Titik muncul unit baru: petak kosong di luar bangunan (agar tidak terjebak di dalam bangunan).
+    function freeSpawnPoint(b) {
+      let def = BUILDINGS[b.type] || { w: 1, h: 1 }, x0 = Math.round(b.x - def.w / 2), y0 = Math.round(b.y - def.h / 2);
+      for (let r = 1; r <= 8; r++) {
+        let spots = [];
+        for (let dx = -r; dx < def.w + r; dx++) for (let dy = -r; dy < def.h + r; dy++) {
+          if (dx > -r && dx < def.w + r - 1 && dy > -r && dy < def.h + r - 1) continue;
+          let tx = x0 + dx, ty = y0 + dy;
+          if (tx >= 0 && ty >= 0 && tx < mapSize && ty < mapSize && !occupied[tx][ty]) spots.push({ x: tx + 0.5, y: ty + 0.5 });
+        }
+        if (spots.length) return spots[Math.floor(Math.random() * spots.length)];
+      }
+      return { x: b.x, y: b.y };
+    }
+
     // ===== GENERASI PETA: sebar resource, TC/rumah/barak lawan, unit awal, posisi kamera =====
     let spawnResources = (d, y, _) => {
       for (let h = 0; h < y; h++) {
@@ -160,7 +176,8 @@ function GameScreen({ config, onExit }) {
         if (h.queue && h.queue.length > 0) {
           if (h.queueTime -= y, h.queueTime <= 0) {
             let o = h.queue.shift();
-            if (spawnUnit(o, h.x + (Math.random() - 0.5) * 3, h.y + (Math.random() - 0.5) * 3, h.ownerId, h.nationId), h.queue.length > 0) h.queueTime = UNITS[h.queue[0]]?.trainTime || 5;
+            let spawnAt = freeSpawnPoint(h);
+            if (spawnUnit(o, spawnAt.x, spawnAt.y, h.ownerId, h.nationId), h.queue.length > 0) h.queueTime = UNITS[h.queue[0]]?.trainTime || 5;
             else h.queueTime = 0;
             if (h.ownerId === "player") for (let g = 0; g < 8; g++) particles.push({ x: h.x, y: h.y, vx: (Math.random() - 0.5) * 3, vy: (Math.random() - 0.5) * 3 - 1, life: 0.5, maxLife: 0.5, color: "#9be8ff", size: 2 });
           }
