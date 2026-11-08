@@ -11,7 +11,37 @@ env:
   PROJECT_DIR: .
 
 jobs:
+  web-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Pasang Playwright
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Smoke test (splash, home, lobi, game)
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          python3 -m http.server 8000 --directory app/src/main/assets/www &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          sleep 2
+          node tools/smoke_test.mjs http://localhost:8000/index.html
+      - name: Simpan screenshot jika gagal
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-failure
+          path: ${{ env.PROJECT_DIR }}/smoke-failure.png
+          if-no-files-found: ignore
+
   build:
+    needs: web-smoke
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

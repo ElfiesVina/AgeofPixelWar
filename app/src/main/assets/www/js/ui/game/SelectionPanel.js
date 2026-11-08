@@ -17,7 +17,7 @@ function SelectionPanel({ apiRef, hud, selectedDef, selectedIsBuilding }) {
     jsx("div", { className: "mt-1.5 h-2 bg-black border border-black", children: jsx("div", { className: "h-full bg-[#7CFC00]", style: { width: `${hud.selected.hp / hud.selected.maxHp * 100}%` } }) }),
     selectedIsBuilding && hud.selected.ownerType === "player" && (hud.selected.type === "townCenter" || hud.selected.type === "barracks") && jsxs("div", { className: "mt-2", children: [
       jsxs("div", { className: "text-[8px] font-bold tracking-widest mb-1 text-[#3a2a1a]", children: ["TRAIN \u2022 POP ", hud.pop, "/", hud.popCap] }),
-      jsx("div", { className: "grid grid-cols-2 gap-1.5", children: (hud.selected.type === "townCenter" ? ["villager"] : [...Object.keys(UNITS).filter((E) => E !== "villager")].slice(0, 4)).map((E) => {
+      jsx("div", { className: "grid grid-cols-2 gap-1.5", children: (hud.selected.type === "townCenter" ? ["villager"] : [...Object.keys(UNITS).filter((E) => E !== "villager" && E !== "captain")].slice(0, 4)).map((E) => {
         let s = UNITS[E];
         if (!s) return null;
         let O = { ...s.cost };
